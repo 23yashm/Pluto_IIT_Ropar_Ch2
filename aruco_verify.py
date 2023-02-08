@@ -16,7 +16,8 @@ file.close
 
 
 while(1):
-  frame,det,pos_x,pos_y,angle_z,size = track_aruco()
+  aruco = track_aruco()
+  frame = aruco["frame"]
   cv2.line(img= frame, pt1=(xmin,ymin), pt2= (xmax,ymin), color =(0,0,255),thickness = 2, lineType = 8, shift = 0)
   cv2.line(img= frame, pt1=(xmin,ymin), pt2= (xmin,ymax), color =(0,0,255),thickness = 2, lineType = 8, shift = 0)
   cv2.line(img= frame, pt1=(xmin,ymax), pt2= (xmax,ymax), color =(0,0,255),thickness = 2, lineType = 8, shift = 0)
@@ -29,14 +30,14 @@ while(1):
 
   key = cv2.waitKey(3) & 0xFF
 
-  time.sleep(0.1)
-  file = open("./log.txt", "a")
-  file.write("Size %s" % (size))
-  file.write("X" + str(pos_x))
-  file.write("Y" + str(pos_y))
-  file.write("A" + str(angle_z))
-  file.write("\n")
-  file.close()
+  time.sleep(0.01)
+  # file = open("./log.txt", "a")
+  # file.write("Size %s" % (size))
+  # file.write("X" + str(pos_x))
+  # file.write("Y" + str(pos_y))
+  # file.write("A" + str(angle_z))
+  # file.write("\n")
+  # file.close()
 
   size=10
   print(np.clip(int((size-14)*100),-100,100))

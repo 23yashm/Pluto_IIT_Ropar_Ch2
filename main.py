@@ -9,41 +9,46 @@ import numpy as np
 
 drone = Pluto()
 
-# drone.physics.trim_roll = 2
-# drone.physics.trim_pitch = 11
-
 file = open("./Omen/logs/log.txt", "w")
 file.close()
 
 #------
-def keyboardHandler():
+def connector():
 
-    while not drone.msp.stopEvent.is_set():
+    while 1:
+        if not drone.connected:
+            if keyboard.is_pressed('b'):
+                if not drone.connect():
+                    print('Failed to Connect')
+                else:
+                    print('Connected')
+                    time.sleep(1)
+                    
+                    drone.connected = 1
 
-        if keyboard.is_pressed('q'):
-            print('q')
-            drone.send_MSP_SET_COMMAND(drone.msp.TAKE_OFF)          
+        else:
+            if keyboard.is_pressed('n'):
+                drone.disconnect()
+                print('Disconnected')
+                drone.connected = 0
 
-        if keyboard.is_pressed('e'):
-            print('e')
-            drone.send_MSP_SET_COMMAND(drone.msp.LAND)            
-        
-        if keyboard.is_pressed('space'):
-            if drone.physics.rcAUX4 == 1500:
-                drone.disarm()                
-                print('Disarmed')
-            else:
+            if keyboard.is_pressed('q'):
+                print('q')
+                drone.send_MSP_SET_COMMAND(drone.msp.TAKE_OFF)          
+
+            if keyboard.is_pressed('e'):
+                print('e')
+                drone.send_MSP_SET_COMMAND(drone.msp.LAND)
+            
+            if keyboard.is_pressed('space'):
                 drone.arm()
-                print('Armed')
+                print('Armed')   
 
-            time.sleep(1)
+            if keyboard.is_pressed('esc'):
+                drone.disarm()
+                print('Disarmed')
 
-        drone.send_MSP_RAW_RC()        
-
-        if keyboard.is_pressed('esc'):
-            drone.disarm()
-            print('Disarmed')
-            drone.msp.stopEvent.set()
+            drone.send_MSP_RAW_RC()
         
         time.sleep(0.08)
 
@@ -157,6 +162,14 @@ def autoStabilizer():
     cv2.destroyAllWindows()
 
 def autopilot():
+    time.sleep(5)
+    drone.send_MSP_SET_COMMAND(drone.msp.TAKE_OFF)          
+    time.sleep(5)
+    drone.send_MSP_SET_COMMAND(drone.msp.LAND)   
+    time.sleep(5)
+    drone.send_MSP_SET_COMMAND(drone.msp.TAKE_OFF)          
+    time.sleep(5)
+    drone.send_MSP_SET_COMMAND(drone.msp.LAND)   
 
     time.sleep(5)
     drone.send_MSP_SET_COMMAND(drone.msp.TAKE_OFF)  
@@ -193,49 +206,49 @@ def autopilot():
 
     drone.send_MSP_SET_COMMAND(drone.msp.LAND)     
 
-if not drone.connect():
-    print('Failed to Connect')
-    exit(0)
-else:
-    print('Connected')
+# if not drone.connect():
+#     print('Failed to Connect')
+#     exit(0)
+# else:
+#     print('Connected')
 
 # --
 # threads
 t_transmitter = threading.Thread(target=drone.msp.transmit)
-t_keyboard = threading.Thread(target=keyboardHandler)
+t_connector = threading.Thread(target=connector)
 t_autoStablizer = threading.Thread(target=autoStabilizer)
 t_autopilot = threading.Thread(target=autopilot)
 
 
-t_keyboard.start()
-print('Keyboard started')
+t_connector.start()
+print('Connector started')
 
 t_transmitter.start()
 print('Transmitter started')
 
-t_autoStablizer.start()
-print('Auto Stablizer started')
+# t_autoStablizer.start()
+# print('Auto Stablizer started')
 
-t_autopilot.start()
-print('Auto Pilot started')
-
-
-
-t_keyboard.join()
-print('Keyboard stopped')
-
-t_transmitter.join()
-print('Transmitter stopped')
-
-t_autoStablizer.join()
-print('Auto Stablizer stopped')
-
-t_autopilot.join()
-print('Auto Pilot stopped')
+# t_autopilot.start()
+# print('Auto Pilot started')
 
 
-drone.msp.stopEvent.set()
-print('Trans ended')
 
-drone.disconnect()
-print('disconnected')
+# t_keyboard.join()
+# print('Keyboard stopped')
+
+# t_transmitter.join()
+# print('Transmitter stopped')
+
+# t_autoStablizer.join()
+# print('Auto Stablizer stopped')
+
+# t_autopilot.join()
+# print('Auto Pilot stopped')
+
+
+# drone.msp.stopEvent.set()
+# print('Trans ended')
+
+# drone.disconnect()
+# print('disconnected')

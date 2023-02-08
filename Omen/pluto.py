@@ -2,6 +2,7 @@ import socket
 import time
 import struct
 from Omen.msp import MSP, Packet
+import json
 
 import Omen.logger as logger
 
@@ -39,22 +40,33 @@ class Physics:
 
 class Pluto:
 
-    def __init__(self, name = "plutoAlpha"):
+    def __init__(self, zavg, xavg, yavg, defPitch, defRoll, defThrottle, name = "plutoAlpha"):
         self.name = name
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server = None
         self.msp = MSP(self.server)        
         self.physics = Physics()
         self.calibrate = 0
-        self.zavg = 14
-        self.xavg = 374
-        self.yavg = 175
-        self.defPitch = 1547
-        self.defRoll = 1467
-        self.defThrottle = 1550
+        self.connected = 0
+        self.tookoff = 0
 
-    def connect(self, host="192.168.4.1",port=23):        
+        file = open('./Omen/callibration_parameters.txt','r')
+        cal = json.loads(file.read())
+        file.close()
+
+        self.zavg = zavg
+        self.xavg = xavg
+        self.yavg = yavg
+        self.defPitch = defPitch
+        self.defRoll = defRoll
+        self.defThrottle = defThrottle
+
+    def connect(self, host="192.168.4.1",port=23):     
         try:
+            self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.server.settimeout(0.1)
+            self.msp.server = self.server
             log.debug(f"Connecting with {host}({port})")
+            print("Attempting to connect...")
             self.server.connect((host, port))
             log.info("Connected.")
 
@@ -65,24 +77,38 @@ class Pluto:
             
             if data == b"OK\r\n":
                 log.info("rcvd: OK")
+                self.connected = 1
+                self.disarm()
                 return True
 
 
             else:
                 log.error("NO REPLY")
-
+    
         except TimeoutError:
             log.error("Failed To Connect: Connection TIME_OUT")
-    
+
         except:
             log.error("x Failed To Connect: NO NETWORK")
-                    
+
         return False            
 
     def disconnect(self):
+        self.connected=0
         self.server.close()
+        self.server = None
+        self.msp.server = self.server
         log.info("Disconnected.")
 
+    def takeoff(self):
+        if self.tookoff==0:
+            self.send_MSP_SET_COMMAND(self.msp.TAKE_OFF)
+            self.tookoff=1
+
+    def land(self):
+        if self.tookoff==1:
+            self.send_MSP_SET_COMMAND(self.msp.LAND)
+            self.tookoff=0
 
     def send_MSP_RAW_RC(self):
         log.info('sending MSP_RAW_RC')
@@ -155,7 +181,7 @@ class Pluto:
 
     def arm(self):
         ''' also send trim values '''
-        self.physics.rcAUX4 = 1500
+        self.physics.rcAUX4 = self.msp.ARM_DRONE
         self.send_MSP_RAW_RC()
 
         # also send init values,
@@ -163,7 +189,7 @@ class Pluto:
 
             
     def disarm(self):
-        self.physics.rcAUX4 = 0
+        self.physics.rcAUX4 = self.msp.DISARM_DRONE
         self.send_MSP_RAW_RC()
 
     def send_MSP_REQUEST(self, type=0):

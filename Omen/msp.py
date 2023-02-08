@@ -61,7 +61,7 @@ class MSP:
     ALT_HOLD_ON = 1500
     THROTTLE_MODE_ON = 2000
     ARM_DRONE = 1500
-    DISARM_DRONE = 2000
+    DISARM_DRONE = 2100
 
     PKT_HEAD = [0x24,0x4d] #$M
     PKT_IN = 0x3c # <
@@ -91,9 +91,13 @@ class MSP:
         log.info("Transmission Started")
 
         while not self.stopEvent.is_set():
-            if not self.SEND_QUEUE.empty():
-                self.server.sendall(self.SEND_QUEUE.get())
-                log.info(f"Queue len {self.SEND_QUEUE.qsize()}")
+            try:
+                if not self.SEND_QUEUE.empty():
+                    self.server.sendall(self.SEND_QUEUE.get())
+                    log.info(f"Queue len {self.SEND_QUEUE.qsize()}")
+            except:
+                pass
+
 
             time.sleep(0.004)
 
